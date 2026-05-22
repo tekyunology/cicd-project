@@ -9,10 +9,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Build Docker image
-        run: docker build -t cicd-project .
-
-      - name: Deploy
-        run: echo "Deployment successful!"
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ~/cicd-project
+            git pull origin main
+            docker build -t cicd-project .
+            docker stop cicd-app || true
+            docker rm cicd-app || true
+            docker run -d --name cicd-app -p 8080:80 cicd-project
