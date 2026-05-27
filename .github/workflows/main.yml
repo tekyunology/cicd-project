@@ -6,21 +6,16 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Deploy to server
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.SERVER_IP }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            cd ~/cicd-project
-            git pull origin main
-            docker build -t cicd-project .
-            docker stop cicd-app || true
-            docker rm cicd-app || true
-            docker run -d --name cicd-app -p 8080:80 cicd-project
+      - name: Build Docker image
+        run: docker build -t cicd-project .
+
+      - name: Deploy
+        run: |
+          docker stop cicd-app || true
+          docker rm cicd-app || true
+          docker run -d --name cicd-app -p 8080:80 cicd-project
